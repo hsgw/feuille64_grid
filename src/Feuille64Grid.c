@@ -254,9 +254,12 @@ void serial_process(void) {
                 bool    ignore_update = false;
 
                 if (x > 7 || y != 0) ignore_update = true;
-                for (int8_t col = 0; col < 8; col++) {
+                for (int8_t col = 0; col < 4; col++) {
                     uint8_t data = CDC_RECIEVE_BYTE();
-                    if (!ignore_update) leds_set(y, col, data);
+                    if (!ignore_update) {
+                        leds_set(y, col * 2, ((uint8_t)data) >> 4);
+                        leds_set(y, col * 2 + 1, ((uint8_t)data) & 0xF);
+                    }
                 }
             } break;
             case GRID_CMD_LED_INTENSITY_COL: {
@@ -265,9 +268,12 @@ void serial_process(void) {
                 bool    ignore_update = false;
 
                 if (x != 0 || y > 7) ignore_update = true;
-                for (int8_t row = 0; row < 8; row++) {
+                for (int8_t row = 0; row < 4; row++) {
                     uint8_t data = CDC_RECIEVE_BYTE();
-                    if (!ignore_update) leds_set(row, x, data);
+                    if (!ignore_update) {
+                        leds_set(row, x * 2, ((uint8_t)data) >> 4);
+                        leds_set(row, x * 2 + 1, ((uint8_t)data) & 0xF);
+                    }
                 }
             } break;
             default:
