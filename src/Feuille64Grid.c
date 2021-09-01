@@ -77,7 +77,7 @@ uint8_t grid_offset_y                  = 0;
 
 void matrix_button_changed(uint8_t row, uint8_t col, bool is_pressed) {
     if (row != 0) {
-        uint8_t data[3] = {is_pressed ? GRID_DEVICE_KEY_PRESSED : GRID_DEVICE_KEY_RELEASED, row - 1, col};
+        uint8_t data[3] = {is_pressed ? GRID_DEVICE_KEY_PRESSED : GRID_DEVICE_KEY_RELEASED, col, row - 1};
         CDC_SEND_DATA(data, 3);
     }
 }
@@ -148,13 +148,13 @@ void serial_process(void) {
                 CDC_SEND_DATA(data, 9);
             } break;
             case GRID_CMD_LED_ON: {
-                uint8_t row = CDC_RECIEVE_BYTE();
                 uint8_t col = CDC_RECIEVE_BYTE();
+                uint8_t row = CDC_RECIEVE_BYTE();
                 leds_set(row, col, 0);
             } break;
             case GRID_CMD_LED_OFF: {
-                uint8_t row = CDC_RECIEVE_BYTE();
                 uint8_t col = CDC_RECIEVE_BYTE();
+                uint8_t row = CDC_RECIEVE_BYTE();
                 leds_set(row, col, 15);
             } break;
             case GRID_CMD_LED_ALL_ON: {
@@ -164,9 +164,9 @@ void serial_process(void) {
                 leds_set_all(0);
             } break;
             case GRID_CMD_LED_MAP: {
-                uint8_t x = CDC_RECIEVE_BYTE();
-                uint8_t y = CDC_RECIEVE_BYTE();
-                bool ignore_update = false;
+                uint8_t x             = CDC_RECIEVE_BYTE();
+                uint8_t y             = CDC_RECIEVE_BYTE();
+                bool    ignore_update = false;
                 if (x != 0 && y != 0) ignore_update = true;
                 for (int8_t row = 0; row < 8; row++) {
                     // int16_t data = -1;
@@ -184,30 +184,30 @@ void serial_process(void) {
 
                     uint8_t data = CDC_RECIEVE_BYTE();
                     for (int8_t col = 0; col < 8; col++) {
-                        if(!ignore_update) leds_set(row, col, ((data & _BV(col)) == 0 ? 0 : 15));
+                        if (!ignore_update) leds_set(row, col, ((data & _BV(col)) == 0 ? 0 : 15));
                     }
                 }
             } break;
             case GRID_CMD_LED_ROW: {
-                uint8_t x = CDC_RECIEVE_BYTE();
-                uint8_t y = CDC_RECIEVE_BYTE();
-                bool ignore_update = false;
+                uint8_t x             = CDC_RECIEVE_BYTE();
+                uint8_t y             = CDC_RECIEVE_BYTE();
+                bool    ignore_update = false;
 
                 if (x != 0 || y > 7) ignore_update = true;
                 uint8_t data = CDC_RECIEVE_BYTE();
                 for (int8_t col = 0; col < 8; col++) {
-                    if(!ignore_update) leds_set(x, col, (data & _BV(col)) == 0 ? 0 : 15);
+                    if (!ignore_update) leds_set(y, col, (data & _BV(col)) == 0 ? 0 : 15);
                 }
             } break;
             case GRID_CMD_LED_COL: {
-                uint8_t x = CDC_RECIEVE_BYTE();
-                uint8_t y = CDC_RECIEVE_BYTE();
-                bool ignore_update = false;
+                uint8_t x             = CDC_RECIEVE_BYTE();
+                uint8_t y             = CDC_RECIEVE_BYTE();
+                bool    ignore_update = false;
 
                 if (x > 7 || y != 0) ignore_update = true;
                 uint8_t data = CDC_RECIEVE_BYTE();
                 for (int8_t row = 0; row < 8; row++) {
-                    if(!ignore_update) leds_set(row, y, (data & _BV(row)) == 0 ? 0 : 15);
+                    if (!ignore_update) leds_set(row, x, (data & _BV(row)) == 0 ? 0 : 15);
                 }
             } break;
             case GRID_CMD_LED_INTENSITY: {
@@ -221,9 +221,9 @@ void serial_process(void) {
                 leds_set_all(brightness);
             } break;
             case GRID_CMD_LED_INTENSITY_MAP: {
-                uint8_t x = CDC_RECIEVE_BYTE();
-                uint8_t y = CDC_RECIEVE_BYTE();
-                bool ignore_update = false;
+                uint8_t x             = CDC_RECIEVE_BYTE();
+                uint8_t y             = CDC_RECIEVE_BYTE();
+                bool    ignore_update = false;
 
                 if (x != 0 && y != 0) ignore_update = true;
 
@@ -236,38 +236,38 @@ void serial_process(void) {
                         // }
                         // temp[row*4+col+1] = data;
                         int16_t data = -1;
-                        while(true) {
+                        while (true) {
                             data = CDC_RECIEVE_BYTE();
-                            if(data < 0) continue;
+                            if (data < 0) continue;
                             break;
                         }
-                        if(!ignore_update) {
-                            leds_set(row, col*2, ((uint8_t)data) >> 4);
-                            leds_set(row, col*2+1, ((uint8_t)data) & 0xF);
+                        if (!ignore_update) {
+                            leds_set(row, col * 2, ((uint8_t)data) >> 4);
+                            leds_set(row, col * 2 + 1, ((uint8_t)data) & 0xF);
                         }
                     }
                 }
             } break;
             case GRID_CMD_LED_INTENSITY_ROW: {
-                uint8_t x = CDC_RECIEVE_BYTE();
-                uint8_t y = CDC_RECIEVE_BYTE();
-                bool ignore_update = false;
+                uint8_t x             = CDC_RECIEVE_BYTE();
+                uint8_t y             = CDC_RECIEVE_BYTE();
+                bool    ignore_update = false;
 
-                if (x != 0 || y > 7) ignore_update = true;
+                if (x > 7 || y != 0) ignore_update = true;
                 for (int8_t col = 0; col < 8; col++) {
                     uint8_t data = CDC_RECIEVE_BYTE();
-                    if(!ignore_update) leds_set(x, col, data);
+                    if (!ignore_update) leds_set(y, col, data);
                 }
             } break;
             case GRID_CMD_LED_INTENSITY_COL: {
-                uint8_t x = CDC_RECIEVE_BYTE();
-                uint8_t y = CDC_RECIEVE_BYTE();
-                bool ignore_update = false;
+                uint8_t x             = CDC_RECIEVE_BYTE();
+                uint8_t y             = CDC_RECIEVE_BYTE();
+                bool    ignore_update = false;
 
-                if (x > 7 || y != 0) ignore_update = true;
+                if (x != 0 || y > 7) ignore_update = true;
                 for (int8_t row = 0; row < 8; row++) {
                     uint8_t data = CDC_RECIEVE_BYTE();
-                    if(!ignore_update) leds_set(row, y, data);
+                    if (!ignore_update) leds_set(row, x, data);
                 }
             } break;
             default:
