@@ -11,6 +11,8 @@ Feuille64というMIDIパッドを作った
 https://yynmt.hatenablog.com/entry/2021/08/19/024232
 
 ## Feuille64へファームウェアを書き込む
+**まだバグや最適化が終わっていない部分があります。想定しない動作をするかもしれません。**
+
 ビルド済みのファームウェアを用意しています。
 
 https://github.com/hsgw/feuille64_grid/releases/latest   
