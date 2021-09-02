@@ -79,6 +79,7 @@ void matrix_button_changed(uint8_t row, uint8_t col, bool is_pressed) {
     if (row != 0) {
         uint8_t data[3] = {is_pressed ? GRID_DEVICE_KEY_PRESSED : GRID_DEVICE_KEY_RELEASED, col, row - 1};
         CDC_SEND_DATA(data, 3);
+        CDC_Device_USBTask(&VirtualSerial_CDC_Interface);
     }
 }
 
@@ -293,15 +294,13 @@ int main(void) {
 
     for (;;) {
         // scan matrix and send data to host
-        if (matrix_update()) {
-            CDC_Device_USBTask(&VirtualSerial_CDC_Interface);
-        }
-
+        matrix_update();
         serial_process();
 
         CDC_Device_USBTask(&VirtualSerial_CDC_Interface);
         // handled by interrupt
         // USB_USBTask();
+
         writePin(D1, true);
         leds_update();
         writePin(D1, false);
