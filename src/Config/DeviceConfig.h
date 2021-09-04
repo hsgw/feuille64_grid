@@ -16,9 +16,8 @@
 #define MATRIX_ROW_PINS \
     { D0, C7, C6, B6, B5, B4, D7, D6, D4 }
 
-// debounce count
-// after capturing pin change, ignore it during 2.5ms * DEBOUNCE_COUNT.
-#define DEBOUNCE_COUNT 2
+// debounce time in ms
+#define DEBOUNCE 5
 
 // col order in matrix.c
 #define COL_ORDER \
@@ -32,6 +31,9 @@
 #define LED_ROW 8
 #define LED_COL 8
 #define LED_COUNT (LED_ROW * LED_COL)
+
+// ms
+#define LED_UPDATE_INTERVAL 20
 
 #define LED_COLOR_R 32
 #define LED_COLOR_G 32

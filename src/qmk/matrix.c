@@ -16,6 +16,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 #include "matrix.h"
 #include "gpio.h"
+#include "debounce.h"
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -28,9 +29,6 @@ static const uint8_t col_order[MATRIX_COLS] = COL_ORDER;
 
 /* matrix state(1:on, 0:off) */
 matrix_row_t matrix[MATRIX_ROWS];  // debounced values
-
-/* debounce counter */
-uint8_t debounce[MATRIX_ROWS][MATRIX_COLS];
 
 // helper functions
 void matrix_output_select_delay(void) { __builtin_avr_delay_cycles(2); }
@@ -65,6 +63,7 @@ static inline matrix_row_t read_cols_on_row(uint8_t current_row) {
     matrix_output_select_delay();
 
     // Compress the raw data to the size of matrix_row_t.
+    // order is COL_ORDER
     matrix_row_t current_row_value = ~(((PINF & 0b00000010) >> 1) + ((PINF & 0b011110000) >> 3) + ((PINB & 0b00001110) << 4));
 
     // Unselect row
@@ -81,17 +80,13 @@ void matrix_init(void) {
         setPinInputHigh_atomic(col_pins[x]);
     }
 
-    // initialize matrix state: all keys off
-    for (uint8_t i = 0; i < MATRIX_ROWS; i++) {
-        matrix[i] = 0;
-        for (uint8_t j = 0; j < MATRIX_COLS; j++) {
-            debounce[i][j] = 0;
-        }
-    }
+    debounce_init();
 }
 
 uint8_t matrix_update(void) {
     bool changed = false;
+
+    debounce_update();
 
     for (uint8_t row = 0; row < MATRIX_ROWS; row++) {
         // set row, read cols
@@ -99,20 +94,15 @@ uint8_t matrix_update(void) {
 
         // scan changed col in row
         for (uint8_t col = 0; col < MATRIX_COLS; col++) {
-            // debounce
-            // After capturing a change, ignore it during DEBOUNCE_COUNT cycle
-            if (debounce[row][col] > 0) {
-                debounce[row][col]--;
-                continue;
-            }
+            if (debounce_is_active(row, col)) continue;
 
             matrix_row_t mask         = ((matrix_row_t)1) << col;
             matrix_row_t masked_value = (row_value & mask);
 
             if (masked_value != (matrix[row] & mask)) {
                 matrix_button_changed(row, col_order[col], masked_value != 0);
-                matrix[row]        = (matrix[row] & ~mask) | masked_value;
-                debounce[row][col] = DEBOUNCE_COUNT;
+                matrix[row] = (matrix[row] & ~mask) | masked_value;
+                debounce_set_active(row, col);
                 changed |= true;
             }
         }

@@ -31,12 +31,15 @@
 #include "Feuille64Grid.h"
 #include "qmk/gpio.h"
 #include "qmk/matrix.h"
+#include "qmk/timer.h"
 #include "leds.h"
 #include "grid_defs.h"
 
 #define CDC_SEND_DATA(data, length) CDC_Device_SendData(&VirtualSerial_CDC_Interface, data, length)
 #define CDC_SEND_BYTE(data) CDC_Device_SendByte(&VirtualSerial_CDC_Interface, data)
 #define CDC_RECIEVE_BYTE() CDC_Device_ReceiveByte(&VirtualSerial_CDC_Interface)
+
+#define MAX_LED_INTERVAL (250)
 
 /** LUFA CDC Class driver interface configuration and state information. This
  * structure is passed to all CDC Class driver functions, so that multiple
@@ -290,9 +293,10 @@ int main(void) {
     SetupHardware();
     GlobalInterruptEnable();
 
-    setPinOutput(D1);
+    uint16_t leds_last_update = timer_read();
 
     for (;;) {
+        uint16_t current_time = timer_read();
         // scan matrix and send data to host
         matrix_update();
         serial_process();
@@ -301,9 +305,10 @@ int main(void) {
         // handled by interrupt
         // USB_USBTask();
 
-        writePin(D1, true);
-        leds_update();
-        writePin(D1, false);
+        if (timer_elapsed(leds_last_update) >= LED_UPDATE_INTERVAL) {
+            leds_update();
+            leds_last_update = current_time;
+        }
     }
 }
 
@@ -321,6 +326,7 @@ void SetupHardware(void) {
     clock_prescale_set(clock_div_1);
 
     /* Hardware Initialization */
+    timer_init();
     leds_init();
     matrix_init();
     USB_Init();
